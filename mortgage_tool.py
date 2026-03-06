@@ -1,3 +1,6 @@
+# Copyright (c) 2026. Private use unrestricted.
+# Commercial use requires a license — contact hellomoto1123@gmail.com
+# See LICENSE.md for full terms.
 """
 mortgage_tool.py
 ================
