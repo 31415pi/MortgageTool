@@ -709,3 +709,151 @@ EnhancedMortgageAnalyzer(loans, refi_month, extended_costs, shadow_loans)
 # New method
 analyzer.compare_day_counts()   # DataFrame: interest cost under all 3 conventions
 ```
+
+---
+
+---
+
+# Importing Extended Costs from Files
+
+`extended_costs_import.py` lets you load recurring cost data from a CSV, XLSX, or ODS file instead of defining `AnnualItem` entries by hand. The function returns an `ExtendedCosts` object ready to pass directly to either analyzer.
+
+```bash
+# Additional dependency for XLSX (already in requirements.txt)
+pip install openpyxl
+
+# Optional: only needed for .ods files
+pip install odfpy
+```
+
+```python
+from extended_costs_import import load_extended_costs, preview_extended_costs
+
+ec = load_extended_costs("my_costs.csv")
+ec = load_extended_costs("my_costs.xlsx")
+ec = load_extended_costs("my_costs.ods")
+
+analyzer = MortgageAnalyzer(loans=[...], extended_costs=ec)
+```
+
+---
+
+## CSV format
+
+One row per entry. Three required columns in this order: `COST_TYPE`, `DATE`, `AMOUNT`. Extra columns are ignored.
+
+```csv
+Tax, 2022, 5400
+Tax, 2023, 5600
+Tax, 2024, 5820
+Insurance, 2024, 1950
+Electric, 202301, 160
+Electric, 202302, 155
+Water, 20240501, 122
+Water, 20240601, 115
+Warranty, 2024, 600
+```
+
+---
+
+## XLSX / ODS format — per-sheet
+
+One sheet per cost type. Sheet name becomes the category name. Row 1 must be a header with at least `DATE` and `COST` (or `AMOUNT`) columns. Extra columns are silently ignored.
+
+```
+Sheet: "Tax"          Sheet: "Electric"       Sheet: "Water"
+┌──────────┬───────┐  ┌──────────┬───────┐    ┌──────────┬───────┬──────────────┐
+│ DATE     │ COST  │  │ DATE     │ COST  │    │ DATE     │ COST  │ NOTES        │
+├──────────┼───────┤  ├──────────┼───────┤    ├──────────┼───────┼──────────────┤
+│ 2022     │ 5400  │  │ 2023     │ 1920  │    │ 20240501 │ 122   │ (ignored)    │
+│ 2023     │ 5600  │  │ 2024     │ 2040  │    │ 20240601 │ 115   │ (ignored)    │
+│ 2024     │ 5820  │  └──────────┴───────┘    └──────────┴───────┴──────────────┘
+└──────────┴───────┘
+```
+
+## XLSX / ODS format — flat sheet
+
+A single sheet named `ALL`, `DATA`, `COSTS`, `EXTENDED`, or `IMPORT` is treated as a flat three-column table — same structure as the CSV format inside a spreadsheet:
+
+```
+Sheet: "ALL"
+┌────────────┬──────────┬────────┐
+│ COST_TYPE  │ DATE     │ AMOUNT │
+├────────────┼──────────┼────────┤
+│ Tax        │ 2022     │ 5400   │
+│ Tax        │ 2023     │ 5600   │
+│ Insurance  │ 2024     │ 1950   │
+│ Electric   │ 2023     │ 1920   │
+└────────────┴──────────┴────────┘
+```
+
+---
+
+## Date formats accepted
+
+| Format | Example | Interpretation |
+|---|---|---|
+| `YYYY` | `2024` | Annual total — averaged across 12 months |
+| `YYYYMM` | `202404` | Monthly entry for April 2024 |
+| `YYYYMMDD` | `20240415` | Collapsed to month (April 2024) |
+| `YYYY-MM` | `2024-04` | Monthly entry |
+| `YYYY-MM-DD` | `2024-04-15` | Collapsed to month |
+| `MM/YYYY` | `04/2024` | Monthly entry |
+
+> **⚠️ YYYYMMDD entries:** If two rows for the same cost type share the same YYYYMM (e.g. `20240104` and `20240128` are both January 2024), a warning is raised and the amounts are **summed**. This is usually a data prep error — one monthly entry per cost type per month is the intent.
+
+---
+
+## Warnings and data quality
+
+The importer raises `UserWarning` (never crashes) in these situations — check your terminal output after loading:
+
+| Situation | Warning |
+|---|---|
+| Missing DATE or COST column on a sheet | Sheet treated as zero for that category |
+| Duplicate YYYYMM entries | Amounts summed, data preserved |
+| Both annual and monthly entries for same year | Monthly entries used, annual ignored |
+| Unrecognized date string | Row skipped |
+| Non-numeric amount | Row skipped |
+| Empty file | Empty ExtendedCosts returned |
+
+---
+
+## Preview before analyzing
+
+`preview_extended_costs()` loads and summarizes the file without building the full object — useful for a quick sanity check:
+
+```python
+from extended_costs_import import preview_extended_costs
+
+print(preview_extended_costs("my_costs.csv"))
+```
+
+```
+cost_type  year  annual_total
+ Electric  2023        1920.0
+ Electric  2024        2040.0
+      Gas  2023         840.0
+      Tax  2022        5400.0
+      Tax  2023        5600.0
+      Tax  2024        5820.0
+     ...
+```
+
+---
+
+## Using the import with either analyzer
+
+```python
+from extended_costs_import import load_extended_costs
+from mortgage_tool import Loan, MortgageAnalyzer
+# or:
+from mortgage_tool_enhanced import EnhancedLoan, EnhancedMortgageAnalyzer
+
+ec = load_extended_costs("costs.xlsx")
+
+analyzer = MortgageAnalyzer(
+    loans=[my_loan],
+    extended_costs=ec,       # ← drop-in replacement for manual ExtendedCosts(...)
+)
+```
