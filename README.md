@@ -16,6 +16,11 @@ A Python toolkit for mortgage amortization, refinancing analysis, and true cost 
 
 ---
 
+![Mortgage Refi Comparison](https://raw.githubusercontent.com/31415pi/MortgageTool/refs/heads/main/MortRefi_Compare.png)
+
+
+---
+
 ## Installation
 
 ```bash
