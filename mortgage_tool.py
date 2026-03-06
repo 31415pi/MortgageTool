@@ -830,7 +830,7 @@ def plot_scenarios(
                 rng = (f"mo {ep.start_month}–{ep.end_month}"
                        if ep.end_month else f"mo {ep.start_month}+")
                 ep_strs.append(f"{amt} ({rng})")
-            subtitle_parts.append(f"Extra Principal: {', '.join(ep_strs)}")
+            subtitle_parts.append(f"Extra Principal Post Refi: {', '.join(ep_strs)}")
 
     subtitle = "   |   ".join(subtitle_parts)
     if subtitle:
