@@ -826,11 +826,11 @@ def plot_scenarios(
         if loan.extra_payments:
             ep_strs = []
             for ep in loan.extra_payments:
-                amt = f"${ep.amount:,.0f}/mo"
+                amt = f'\u0024{ep.amount:,.0f}/mo'
                 rng = (f"mo {ep.start_month}–{ep.end_month}"
                        if ep.end_month else f"mo {ep.start_month}+")
                 ep_strs.append(f"{amt} ({rng})")
-            subtitle_parts.append(f"Extra Principal Post Refi: {', '.join(ep_strs)}")
+            subtitle_parts.append(f"Extra Principal: {', '.join(ep_strs)}")
 
     subtitle = "   |   ".join(subtitle_parts)
     if subtitle:
