@@ -1,6 +1,6 @@
 # mortgage_tool.py
 
-A Python toolkit for mortgage amortization, refinancing analysis, and true cost of homeownership. Built around pandas DataFrames so every table is directly sliceable, filterable, and exportable.
+A Python toolkit for mortgage amortization, refinancing analysis, and true cost of homeownership. Built around pandas DataFrames so every table is directly sliceable, filterable, and exportable. Includes extended costs such as home warranty, utility costs, taxes, etc with linear regression to extrapolate lifetime cost of ownership..
 
 ---
 
