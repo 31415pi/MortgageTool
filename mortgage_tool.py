@@ -1,6 +1,3 @@
-# Copyright (c) 2026. Private use unrestricted.
-# Commercial use requires a license — contact hellomoto1123@gmail.com
-# See LICENSE.md for full terms.
 """
 mortgage_tool.py
 ================
@@ -811,7 +808,38 @@ def plot_scenarios(
 
     ax.set_xlabel("Months Elapsed", fontsize=11)
     ax.set_ylabel("Amount ($)", fontsize=11)
-    ax.set_title("Mortgage Scenario Analysis", fontsize=14, fontweight="bold")
+
+    # ── Dynamic subtitle ──────────────────────────────────────────────────────
+    # Inspect which loan indices are actually referenced in the active groups
+    active_lidxs = {g["loan_idx"] for g in groups if "loan_idx" in g}
+
+    subtitle_parts = []
+    for lidx in sorted(active_lidxs):
+        loan = analyzer.loans[lidx - 1]
+        rate_pct = f"{loan.annual_rate * 100:.3f}".rstrip("0").rstrip(".")
+        if lidx == 1:
+            subtitle_parts.append(f"Initial Mortgage: {rate_pct}%")
+        else:
+            subtitle_parts.append(f"Refinance: {rate_pct}%")
+
+        # Extra payments: collect any that are actually active on this loan
+        if loan.extra_payments:
+            ep_strs = []
+            for ep in loan.extra_payments:
+                amt = f"${ep.amount:,.0f}/mo"
+                rng = (f"mo {ep.start_month}–{ep.end_month}"
+                       if ep.end_month else f"mo {ep.start_month}+")
+                ep_strs.append(f"{amt} ({rng})")
+            subtitle_parts.append(f"Extra Principal: {', '.join(ep_strs)}")
+
+    subtitle = "   |   ".join(subtitle_parts)
+    if subtitle:
+        # Main title sits higher (pad) to leave room for subtitle beneath it
+        ax.set_title("Mortgage Scenario Analysis", fontsize=14, fontweight="bold", pad=28)
+        ax.text(0.5, 1.01, subtitle, transform=ax.transAxes,
+                fontsize=8.5, color="#555555", ha="center", va="bottom")
+    else:
+        ax.set_title("Mortgage Scenario Analysis", fontsize=14, fontweight="bold")
     ax.yaxis.set_major_formatter(
         plt.FuncFormatter(lambda x, _: f"${x:,.0f}")
     )
